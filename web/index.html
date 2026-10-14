@@ -131,10 +131,12 @@
 <dialog id="clipboard-dialog" aria-labelledby="clipboard-heading"><div class="dialog-head"><h2 id="clipboard-heading">Copy TradingView symbols</h2><button class="close-btn" data-close="clipboard-dialog">Close</button></div><div class="dialog-body"><p class="small muted">Your browser blocked clipboard access. Select this text and copy it, then paste into TradingView's Add symbols dialog.</p><textarea id="clipboard-text" readonly style="width:100%;height:180px;margin-top:var(--space-4);background:var(--bg);color:var(--text);padding:var(--space-3)" aria-label="TradingView symbols"></textarea></div></dialog>
 <div id="toast" class="toast" role="status" hidden></div>
 <script>
-let DATA_ROOT=['localhost','127.0.0.1','arjunbchavan1989-ab.github.io'].includes(location.hostname)?'data/':'https://arjunbchavan1989-ab.github.io/nse-kell-price-cycle/data/';
+let DATA_ROOT=['localhost','127.0.0.1'].includes(location.hostname)?'data/':'https://raw.githubusercontent.com/arjunbchavan1989-AB/nse-kell-price-cycle/main/web/data/';
 async function fetchData(path,allowBundledFallback=false){
-  try{const response=await fetch(DATA_ROOT+path,{cache:'no-store'});if(!response.ok)throw Error('Data unavailable');return response;}
-  catch(error){if(!allowBundledFallback||DATA_ROOT==='data/')throw error;DATA_ROOT='data/';const response=await fetch(DATA_ROOT+path,{cache:'no-store'});if(!response.ok)throw error;return response;}
+  const checked=async response=>{if(!response.ok)throw Error('Data unavailable');if(path==='latest.json'&&(await response.clone().json()).market_data?.mode!=='Independent per-repository acquisition')throw Error('Waiting for independent source data');return response;};
+  const suffix='?v='+Math.floor(Date.now()/60000);
+  try{return await checked(await fetch(DATA_ROOT+path+suffix,{cache:'no-store'}));}
+  catch(error){if(!allowBundledFallback||DATA_ROOT==='data/')throw error;DATA_ROOT='data/';return await checked(await fetch(DATA_ROOT+path+suffix,{cache:'no-store'}));}
 }
   const $=id=>document.getElementById(id);
   const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','WD','BC','BD','NC'].map((code,i)=>[code,i]));

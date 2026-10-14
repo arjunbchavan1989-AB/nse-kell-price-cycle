@@ -132,6 +132,7 @@
 <div id="toast" class="toast" role="status" hidden></div>
 <script>
   const $=id=>document.getElementById(id);
+  const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','WD','BC','BD','NC'].map((code,i)=>[code,i]));
   let data=null, phases={}, selectedPhase='', view='board', active=null, chartData=null, chartRange=120, chartToken=0, toastTimer=null;
   const number=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d});
   const signed=n=>n==null?'—':(n>=0?'+':'')+number(n,2)+'%';
@@ -190,7 +191,7 @@
     $('board').hidden=view!=='board';$('table-view').hidden=view!=='table';
     $('board-button').setAttribute('aria-pressed',String(view==='board'));$('table-button').setAttribute('aria-pressed',String(view==='table'));
     $('board').replaceChildren();
-    data.phases.filter(p=>!selectedPhase||p.code===selectedPhase).forEach(p=>{
+    data.phases.filter(p=>!selectedPhase||p.code===selectedPhase).sort((a,b)=>(BOARD_ORDER.get(a.code)??Infinity)-(BOARD_ORDER.get(b.code)??Infinity)).forEach(p=>{
       const group=rows.filter(r=>r.phase===p.code),lane=element('article','lane');lane.style.setProperty('--phase',p.color);
       const head=element('div','lane-head'),title=element('div');title.append(element('span','code',p.code),element('h3','',p.name));head.append(title,element('span','lane-count',group.length));
       const copy=element('button','copy',`Copy TV (${group.length})`);copy.disabled=!group.length;copy.setAttribute('aria-label',`Copy all ${p.name} symbols for TradingView`);copy.onclick=()=>copySymbols(group,copy);

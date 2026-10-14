@@ -131,6 +131,11 @@
 <dialog id="clipboard-dialog" aria-labelledby="clipboard-heading"><div class="dialog-head"><h2 id="clipboard-heading">Copy TradingView symbols</h2><button class="close-btn" data-close="clipboard-dialog">Close</button></div><div class="dialog-body"><p class="small muted">Your browser blocked clipboard access. Select this text and copy it, then paste into TradingView's Add symbols dialog.</p><textarea id="clipboard-text" readonly style="width:100%;height:180px;margin-top:var(--space-4);background:var(--bg);color:var(--text);padding:var(--space-3)" aria-label="TradingView symbols"></textarea></div></dialog>
 <div id="toast" class="toast" role="status" hidden></div>
 <script>
+let DATA_ROOT=['localhost','127.0.0.1','arjunbchavan1989-ab.github.io'].includes(location.hostname)?'data/':'https://arjunbchavan1989-ab.github.io/nse-kell-price-cycle/data/';
+async function fetchData(path,allowBundledFallback=false){
+  try{const response=await fetch(DATA_ROOT+path,{cache:'no-store'});if(!response.ok)throw Error('Data unavailable');return response;}
+  catch(error){if(!allowBundledFallback||DATA_ROOT==='data/')throw error;DATA_ROOT='data/';const response=await fetch(DATA_ROOT+path,{cache:'no-store'});if(!response.ok)throw error;return response;}
+}
   const $=id=>document.getElementById(id);
   const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','WD','BC','BD','NC'].map((code,i)=>[code,i]));
   let data=null, phases={}, selectedPhase='', view='board', active=null, chartData=null, chartRange=120, chartToken=0, toastTimer=null;
@@ -160,7 +165,7 @@
     $('asof').textContent=`EOD ${data.last_trading_date}`;
     $('updated').textContent=`Built ${new Date(data.generated_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'})} IST`;
     $('universe-stat').textContent=number(data.qualified_count);
-    $('coverage-stat').textContent=`${number(data.coverage_pct,1)}% history coverage · ${number(data.candidate_count)} source candidates`;
+    $('coverage-stat').textContent=`${number(data.coverage_pct,1)}% eligible history coverage · independently filtered`;
     $('signals-stat').textContent=number(data.new_signals);$('changes-stat').textContent=number(data.transitions);
     const bull=data.rows.filter(r=>r.regime==='bullish').length,bear=data.rows.filter(r=>r.regime==='bearish').length,neutral=data.rows.length-bull-bear;
     $('bull-stat').textContent=`${number(bull)} bullish`;$('bear-stat').textContent=`${number(bear)} bearish`;
@@ -226,7 +231,7 @@
     if(row.retest_highs)$('detail-reasons').append(element('li','','Retest-of-highs flag: price revisits a recent exhaustion high without closing at the high.'));
     $('chart-tip').textContent='Loading daily candles...';$('event-list').replaceChildren();
     $('detail-dialog').showModal();drawChart();
-    try{const r=await fetch('data/charts/'+encodeURIComponent(row.symbol)+'.json',{cache:'no-store'});if(!r.ok)throw Error('Chart unavailable');const chart=await r.json();if(token!==chartToken)return;chartData=chart;$('chart-tip').textContent='Move over the chart to inspect a candle';chart.events.slice(-10).forEach(e=>{const t=element('span','event-tag',`${e.date} ${e.code}`);t.style.color=phases[e.code].color;$('event-list').append(t);});requestAnimationFrame(()=>drawChart());}
+    try{const r=await fetchData('charts/'+encodeURIComponent(row.symbol)+'.json');if(!r.ok)throw Error('Chart unavailable');const chart=await r.json();if(chart.date!==data.last_trading_date)throw Error('Chart session mismatch');if(token!==chartToken)return;chartData=chart;$('chart-tip').textContent='Move over the chart to inspect a candle';chart.events.slice(-10).forEach(e=>{const t=element('span','event-tag',`${e.date} ${e.code}`);t.style.color=phases[e.code].color;$('event-list').append(t);});requestAnimationFrame(()=>drawChart());}
     catch(e){if(token===chartToken)$('chart-tip').textContent='Chart could not be loaded. Scan metrics remain available.';}
   }
   function drawChart(hover=-1){
@@ -274,7 +279,7 @@
   }
   async function init(){
     bind();
-    try{const response=await fetch('data/latest.json',{cache:'no-store'});if(!response.ok)throw Error('Snapshot unavailable');data=await response.json();if(!Array.isArray(data.rows)||!data.rows.length)throw Error('The scanner has not produced a valid snapshot yet');buildSummary();buildRules();$('loading').hidden=true;render();}
+    try{const response=await fetchData('latest.json',true);if(!response.ok)throw Error('Snapshot unavailable');data=await response.json();if(!Array.isArray(data.rows)||!data.rows.length)throw Error('The scanner has not produced a valid snapshot yet');buildSummary();buildRules();$('loading').hidden=true;render();}
     catch(e){$('loading').hidden=true;$('error').hidden=false;$('error').textContent=e.message+'. Check the GitHub Actions run; the dashboard will not invent scan results.';}
   }
   init();

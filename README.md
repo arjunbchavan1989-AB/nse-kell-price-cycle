@@ -32,6 +32,10 @@ The GitHub Actions workflow is scheduled **every day at 19:30 IST (14:00 UTC)**.
 
 No paid data key, cross-repository token or upstream workflow is required.
 `refresh_data=false` remains available for UI-only deployment.
+Preview/pplx app versions read this dashboard's own public GitHub Pages data so
+daily updates appear there too. If that initial remote fetch fails, the bundled
+last-good snapshot is used consistently; its EOD and generation timestamps
+remain visible. Live data and bundled chart files are not mixed.
 
 At least 95% of independently qualified candidates must have histories for the same scan session. Snapshots older than four calendar days, missing benchmark data, or empty universes fail the scan. Failed runs do not commit or deploy partial output and retain the last good published snapshot. An own-repository cache speeds subsequent scans.
 

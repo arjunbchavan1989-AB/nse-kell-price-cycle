@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NSE Price Cycle | Oliver Kell-inspired scanner</title>
+  <meta name="description" content="Daily Indian-equity price-cycle scanner using the 10/20 EMA framework, MidSmallcap 400 relative strength, chart diagnostics and TradingView watchlist copying.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {--font-body:'IBM Plex Sans',sans-serif;--font-display:'IBM Plex Sans',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+      --text-xs:clamp(.75rem,.72rem + .1vw,.8125rem);--text-sm:clamp(.875rem,.85rem + .1vw,.9375rem);--text-base:1rem;--text-lg:1.25rem;--text-xl:clamp(1.5rem,1.3rem + .5vw,1.875rem);
+      --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+      --bg:#0c1116;--surface:#131b23;--surface2:#19232d;--border:#2a3642;--line:#22303b;--text:#dee8ef;--muted:#8fa3b4;--faint:#627b8e;--accent:#70d5bc;--up:#64d5ad;--down:#f39691;--radius:.5rem;--shadow:0 20px 90px #0008}
+    [data-theme="light"] {--bg:#f3f6f8;--surface:#fff;--surface2:#edf2f6;--border:#c8d4de;--line:#dae3ea;--text:#183042;--muted:#526c7e;--faint:#7890a1;--accent:#12685b;--up:#126c50;--down:#b13d36;--shadow:0 20px 80px #17304030}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-synthesis:none;-webkit-font-smoothing:antialiased;text-size-adjust:100%}
+    body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);line-height:1.5;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit;color:inherit;min-height:44px}button{cursor:pointer}button:disabled{cursor:default;opacity:.4}button,a,input,select{transition:background .16s,color .16s,border-color .16s}
+    button{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius)}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:3px}button:hover:not(:disabled){background:var(--surface2);border-color:var(--muted)}
+    svg,img,canvas{display:block;max-width:100%}h1,h2,h3{line-height:1.2;font-weight:600}h1{font-size:var(--text-xl);letter-spacing:-.025em}h2{font-size:var(--text-lg)}p{max-width:85ch}
+    .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.up{color:var(--up)}.down{color:var(--down)}.small{font-size:var(--text-xs)}
+    .shell{max-width:1800px;margin:auto;padding:var(--space-6)}.header{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-6);flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:var(--space-3)}.brand svg{width:36px;height:36px;color:var(--accent)}
+    .eyebrow{font-size:var(--text-xs);font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-1)}
+    .header-right{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}.icon-btn{padding:var(--space-2) var(--space-3);font-size:var(--text-sm)}.date-block{text-align:right;margin-right:var(--space-3)}
+    .filter-strip{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;border-block:1px solid var(--line);padding:var(--space-3) 0;margin-bottom:var(--space-5)}
+    .chip{font-size:var(--text-xs);color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:var(--space-1) var(--space-2)}
+    .chip b{color:var(--text);font-weight:500}.live-dot{width:6px;height:6px;background:var(--accent);border-radius:100%;display:inline-block;margin-right:var(--space-2)}
+    .summary{display:grid;grid-template-columns:1fr 1fr 1fr 1.6fr;gap:var(--space-3);margin-bottom:var(--space-6)}
+    .stat{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:var(--space-4) var(--space-5)}
+    .stat-label{text-transform:uppercase;font-size:var(--text-xs);letter-spacing:.08em;color:var(--muted)}.stat-value{font-size:var(--text-xl);font-family:var(--font-mono);margin:var(--space-1) 0;font-weight:500}
+    .stat-note{font-size:var(--text-xs);color:var(--muted)}.balance{display:flex;justify-content:space-between;margin:var(--space-2) 0;font-family:var(--font-mono);font-size:var(--text-sm)}.balance-track{height:6px;background:var(--line);display:flex;overflow:hidden;border-radius:8px}.balance-track span{height:100%}
+    .section-heading{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3)}.section-heading h2{font-size:var(--text-base);font-weight:500}.section-heading p{font-size:var(--text-xs);color:var(--muted)}
+    .cycle-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-2);margin-bottom:var(--space-2)}
+    .phase-chip{position:relative;padding:var(--space-3);text-align:left;border-top:2px solid var(--phase);min-width:0}
+    .phase-chip[aria-pressed="true"]{background:var(--surface2);box-shadow:inset 0 0 0 1px var(--phase)}
+    .phase-chip .code{font-size:var(--text-xs);font-family:var(--font-mono);color:var(--phase)}.phase-chip .phase-name{font-size:var(--text-sm);font-weight:500;display:block;margin-top:var(--space-1)}
+    .phase-chip .number{position:absolute;right:var(--space-3);top:var(--space-3);font-family:var(--font-mono);font-size:var(--text-base);color:var(--text)}.phase-chip .phase-bar{height:3px;background:var(--line);margin-top:var(--space-3);border-radius:4px;overflow:hidden}.phase-bar span{display:block;height:100%;background:var(--phase)}
+    .secondary-phases{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-5)}.minor-phase{font-size:var(--text-xs);padding:var(--space-1) var(--space-3)}.minor-phase[aria-pressed="true"]{border-color:var(--accent)}
+    .controls{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;margin:var(--space-5) 0 var(--space-3)}.search{flex:1;min-width:230px}.search input{width:100%}
+    input,select{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-2) var(--space-3);font-size:var(--text-sm)}input::placeholder{color:var(--muted)}
+    .segmented{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}.segmented button{border:none;border-radius:0;padding:var(--space-2) var(--space-3);font-size:var(--text-sm)}.segmented button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+    .results-line{display:flex;justify-content:space-between;color:var(--muted);font-size:var(--text-xs);margin-bottom:var(--space-3);gap:var(--space-3)}
+    .board{display:grid;grid-template-columns:repeat(10,230px);gap:var(--space-3);overflow-x:auto;padding-bottom:var(--space-4);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+    .lane{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;max-height:710px;display:flex;flex-direction:column}
+    .lane-head{padding:var(--space-3);border-top:3px solid var(--phase);display:flex;align-items:center;justify-content:space-between;min-height:72px;gap:var(--space-2)}
+    .lane-head h3{font-size:var(--text-sm);font-weight:600;max-width:175px}.lane-head .code{color:var(--phase);font-family:var(--font-mono);font-size:var(--text-xs)}.lane-count{font-family:var(--font-mono);font-size:var(--text-lg);color:var(--phase)}
+    .copy{border-radius:0;border-inline:none;background:var(--surface2);font-size:var(--text-xs);padding:var(--space-2);min-height:36px}
+    .cards{padding:var(--space-2);overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:var(--space-2);scrollbar-width:thin}
+    .stock{display:block;flex-shrink:0;text-align:left;width:100%;padding:var(--space-3);border:1px solid var(--line);background:var(--bg);border-radius:4px}.stock-top,.stock-bottom{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+    .ticker{font-family:var(--font-mono);font-size:var(--text-sm);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chg{font-family:var(--font-mono);font-size:var(--text-xs);white-space:nowrap}
+    .stock-bottom{margin-top:var(--space-2);font-family:var(--font-mono);font-size:var(--text-xs);color:var(--muted)}.rs-pill{color:var(--accent);white-space:nowrap}.fresh{color:var(--phase);font-size:var(--text-xs)}.age{font-size:var(--text-xs);color:var(--muted)}
+    .empty-lane{padding:var(--space-5) var(--space-3);font-size:var(--text-xs);color:var(--muted)}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--radius);max-height:740px}table{border-collapse:collapse;width:100%;white-space:nowrap}
+    th{position:sticky;top:0;background:var(--surface2);text-align:left;font-size:var(--text-xs);font-weight:500;color:var(--muted);padding:var(--space-3)}td{border-top:1px solid var(--line);padding:var(--space-3);font-family:var(--font-mono);font-size:var(--text-xs)}tbody tr{cursor:pointer}tbody tr:hover{background:var(--surface)}.phase-pill{border:1px solid var(--phase);color:var(--phase);padding:2px 6px;border-radius:4px}
+    [data-theme="light"] .code,[data-theme="light"] .lane-count,[data-theme="light"] .fresh,[data-theme="light"] .phase-pill{color:color-mix(in srgb,var(--phase) 55%,#183042)}
+    .notice{padding:var(--space-3) var(--space-4);margin-top:var(--space-4);border:1px solid var(--line);background:var(--surface);font-size:var(--text-xs);color:var(--muted);line-height:1.8}
+    footer{display:flex;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;border-top:1px solid var(--line);margin-top:var(--space-6);padding-top:var(--space-4);font-size:var(--text-xs);color:var(--muted)}
+    .loading{min-height:260px;display:grid;place-items:center;color:var(--muted)}.error{border:1px solid var(--down);padding:var(--space-5);color:var(--down)}
+    dialog{margin:auto;max-width:1100px;width:calc(100% - 32px);max-height:90dvh;overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:0}
+    dialog::backdrop{background:#061019c9;backdrop-filter:blur(4px)}.dialog-head{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);position:sticky;top:0;background:var(--surface);z-index:2}
+    .dialog-body{padding:var(--space-5)}.close-btn{padding:var(--space-2) var(--space-3);font-size:var(--text-xs)}
+    .detail-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)}.detail-title{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}.detail-price{font-family:var(--font-mono);font-size:var(--text-lg)}
+    .chart-toolbar{display:flex;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;font-size:var(--text-xs);margin-bottom:var(--space-2)}.chart-legend{display:flex;gap:var(--space-4);color:var(--muted);align-items:center}.legend-line{width:14px;height:2px;display:inline-block;margin-right:4px}
+    .chart-box{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);height:380px}#price-chart{width:100%;height:100%}.chart-tip{position:absolute;top:var(--space-2);left:var(--space-3);font:var(--text-xs) var(--font-mono);color:var(--text);background:var(--surface);padding:var(--space-2);pointer-events:none;border-radius:4px;max-width:95%}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin:var(--space-5) 0}.metric{padding:var(--space-3);background:var(--surface2);border-radius:4px}.metric .label{font-size:var(--text-xs);color:var(--muted);display:block}.metric .value{font-family:var(--font-mono);font-size:var(--text-sm);display:block;margin-top:var(--space-1)}
+    .reason-list{padding-left:var(--space-5);font-size:var(--text-sm);color:var(--muted);line-height:1.8}.event-list{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)}.event-tag{font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface2);padding:var(--space-1) var(--space-2);border-radius:4px}
+    .rule-list{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-4)}.rule{border:1px solid var(--border);border-top:2px solid var(--phase);padding:var(--space-4);border-radius:4px}.rule h3{font-size:var(--text-base);margin-bottom:var(--space-2)}.rule p{font-size:var(--text-sm);color:var(--muted)}.rule-intro{font-size:var(--text-sm);line-height:1.8}.reference-img{background:white;border-radius:var(--radius);margin-bottom:var(--space-4)}
+    .toast{position:fixed;bottom:var(--space-6);left:50%;transform:translateX(-50%);padding:var(--space-3) var(--space-5);border:1px solid var(--accent);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-size:var(--text-sm);z-index:10;max-width:90vw;box-shadow:var(--shadow)}
+    [hidden]{display:none!important}
+    @media(max-width:1000px){.cycle-strip{grid-template-columns:repeat(3,1fr)}.summary{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.shell{padding:var(--space-4)}.header{align-items:flex-start}.date-block{text-align:left}.header-right{width:100%}.summary{gap:var(--space-2)}.stat{padding:var(--space-3)}.stat-note{font-size:var(--text-xs)}.cycle-strip{grid-template-columns:repeat(2,1fr)}.phase-chip .number{font-size:var(--text-sm)}.phase-chip .phase-name{font-size:var(--text-xs)}.controls{align-items:stretch}.search{flex-basis:100%}.controls select{flex:1;min-width:120px}.board{grid-template-columns:repeat(10,220px)}.metrics{grid-template-columns:repeat(2,1fr)}.rule-list{grid-template-columns:1fr}.dialog-body{padding:var(--space-3)}.chart-box{height:300px}.results-line{flex-direction:column;gap:var(--space-1)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="header">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-label="Price Cycle logo" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 26c-7-8-2-19 8-21M32 14c7 8 2 19-8 21"/><path d="m11 3 5 2-1 6m14 26-5-2 1-6"/><path d="m10 24 6-9 5 5 9-7" stroke-width="2.5"/></svg>
+      <div><div class="eyebrow">Indian equities / daily cycle lab</div><h1>NSE Price Cycle</h1></div>
+    </div>
+    <div class="header-right">
+      <div class="date-block"><div id="asof" class="mono small">Loading snapshot</div><div id="updated" class="muted small">Daily 10 / 20 EMA framework</div></div>
+      <button class="icon-btn" id="rules-button">Scan rules</button><button class="icon-btn" id="reference-button">References</button><button class="icon-btn" id="theme-button" aria-label="Switch to light theme">Light</button>
+    </div>
+  </header>
+  <div class="filter-strip" aria-label="Universe filters">
+    <span class="chip"><span class="live-dot"></span>Independent NSE universe</span><span class="chip">Market cap <b>&gt; ₹500 cr</b></span><span class="chip">Avg volume (20d) <b>&gt; 70,000</b></span><span class="chip">Avg ₹ volume (20d) <b>&gt; ₹3 cr</b></span><span class="chip">Avg range (20d) <b>&gt; 3%</b></span><span class="chip">RS <b>MidSmallcap 400</b></span>
+  </div>
+  <section class="summary" aria-label="Scan summary">
+    <div class="stat"><div class="stat-label">Eligible universe</div><div class="stat-value" id="universe-stat">—</div><div class="stat-note" id="coverage-stat">Validating coverage</div></div>
+    <div class="stat"><div class="stat-label">Fresh signals</div><div class="stat-value" id="signals-stat">—</div><div class="stat-note">Qualifying setup on the latest bar</div></div>
+    <div class="stat"><div class="stat-label">Phase changes</div><div class="stat-value" id="changes-stat">—</div><div class="stat-note">Compared with the prior session</div></div>
+    <div class="stat"><div class="stat-label">EMA trend balance</div><div class="balance"><span class="up" id="bull-stat">—</span><span class="down" id="bear-stat">—</span></div><div class="balance-track" id="trend-bar"></div><div class="stat-note" id="neutral-stat" style="margin-top:var(--space-2)">Rising or falling EMA20 + EMA stack + price</div></div>
+  </section>
+  <section aria-label="Cycle phases">
+    <div class="section-heading"><h2>The price cycle</h2><p>Click a phase to focus the scan. Swipe the board to see every lane.</p></div>
+    <div class="cycle-strip" id="cycle-strip"></div><div class="secondary-phases" id="secondary-phases"></div>
+  </section>
+  <div class="controls">
+    <label class="search"><span hidden>Search symbol</span><input id="search" type="search" placeholder="Search NSE symbol..." aria-label="Search NSE symbol"></label>
+    <select id="direction" aria-label="Trend direction"><option value="">All trends</option><option value="bullish">Bullish EMA trend</option><option value="bearish">Bearish EMA trend</option><option value="neutral">Mixed / neutral trend</option></select>
+    <select id="freshness" aria-label="Signal freshness"><option value="">All signal ages</option><option value="today">Fresh today</option><option value="changed">Phase changed</option></select>
+    <select id="rs-min" aria-label="Minimum RS percentile"><option value="0">All RS ranks</option><option value="70">RS ≥ 70</option><option value="80">RS ≥ 80</option><option value="90">RS ≥ 90</option></select>
+    <select id="sort" aria-label="Sort stocks"><option value="rs">RS rank: high first</option><option value="change">Change: high first</option><option value="volume">Volume ratio: high first</option><option value="symbol">Symbol: A to Z</option></select>
+    <div class="segmented" aria-label="Dashboard view"><button id="board-button" aria-pressed="true">Board</button><button id="table-button" aria-pressed="false">Table</button></div>
+    <button class="icon-btn" id="csv-button">Export CSV</button><button class="icon-btn" id="reset-button">Reset</button>
+  </div>
+  <div class="results-line"><span id="results">Loading the latest scan...</span><span>Copy TV = comma-separated NSE:SYMBOL watchlist</span></div>
+  <div id="loading" class="loading">Loading verified market-data snapshot...</div>
+  <div id="error" class="error" hidden></div>
+  <section class="board" id="board" aria-label="Price cycle scan board" hidden></section>
+  <section class="table-wrap" id="table-view" hidden><table><thead><tr><th>Symbol</th><th>Price</th><th>1D %</th><th>Phase</th><th>Signal</th><th>EMA trend</th><th>RS rank</th><th>Excess return</th><th>Volume ×</th><th>ATR to EMA10</th><th>MCap ₹cr</th><th>Avg range %</th></tr></thead><tbody id="table-body"></tbody></table></section>
+  <div class="notice" id="data-note">Rule-based candidates inspired by the supplied Oliver Kell diagrams. Numeric thresholds are configurable approximations, not official Kell rules. Extension labels do not confirm a top or bottom.</div>
+  <footer><span>Daily bars · EMA10 / EMA20 · Wilder ATR14 · MidSmallcap 400 RS</span><span><a href="https://github.com/arjunbchavan1989-AB/nse-kell-price-cycle" target="_blank" rel="noopener">GitHub & scan history</a> · Independent daily refresh: 7:30 PM IST</span></footer>
+</main>
+<dialog id="detail-dialog" aria-labelledby="detail-heading">
+  <div class="dialog-head"><h2 id="detail-heading">Symbol diagnostics</h2><button class="close-btn" data-close="detail-dialog">Close</button></div>
+  <div class="dialog-body"><div class="detail-top"><div class="detail-title"><span id="detail-phase" class="phase-pill"></span><span id="detail-price" class="detail-price"></span><span id="detail-change" class="mono"></span></div><button id="copy-symbol" class="icon-btn">Copy symbol</button></div>
+    <div class="chart-toolbar"><div class="chart-legend"><span><i class="legend-line" style="background:#ee9c69"></i>EMA10</span><span><i class="legend-line" style="background:#59b5ed"></i>EMA20</span><span>Volume below</span></div><div class="segmented"><button class="range-button" data-range="60" aria-pressed="false">60D</button><button class="range-button" data-range="120" aria-pressed="true">120D</button><button class="range-button" data-range="180" aria-pressed="false">180D</button></div></div>
+    <div class="chart-box"><canvas id="price-chart" aria-label="Daily candlestick chart with 10 and 20 EMA and volume"></canvas><div class="chart-tip" id="chart-tip">Loading chart...</div></div>
+    <div class="metrics" id="detail-metrics"></div>
+    <h3 style="font-size:var(--text-base);margin-bottom:var(--space-2)">Why this lane?</h3><ul class="reason-list" id="detail-reasons"></ul>
+    <div class="event-list" id="event-list"></div><p class="small muted" style="margin-top:var(--space-4)">Technical chart prices are dividend-adjusted; the displayed last close and market cap use the raw daily close. Wedge detection is an EMA/price-pivot proxy, not visual trendline fitting.</p>
+  </div>
+</dialog>
+<dialog id="rules-dialog" aria-labelledby="rules-heading"><div class="dialog-head"><h2 id="rules-heading">Rulebook & safeguards</h2><button class="close-btn" data-close="rules-dialog">Close</button></div><div class="dialog-body"><p class="rule-intro">The reference images describe a discretionary price-action framework, not an executable scanner. These daily-bar rules are transparent approximations. A stock is never forced into a named setup if it does not qualify; it goes into Trend / Holding or No Clear Setup.</p><div id="rule-list" class="rule-list"></div><div class="notice">Precedence: Exhaustion Extension → Reversal Extension → Wedge Drop → Wedge Pop → bullish Crossback → bearish Crossback → bullish Base Break → bearish Base Break. A compatible recent setup can remain visible for 5 trading sessions. All breakout pivots and volume averages exclude today's bar. No future bars are used.</div><p class="small muted" style="margin-top:var(--space-4)">Own NSE listing, Yahoo EOD prices and daily shares are acquired independently. Market cap is own shares × own raw EOD close. Range is mean True Range / previous close, not gap-excluding ADR. Provider history coverage below 65% of official listings, or same-session/shares/eligible-chart coverage below 95%, blocks publication. Missing symbols and newly listed histories are reported; unavailable provider data cannot be evaluated.</p></div></dialog>
+<dialog id="reference-dialog" aria-labelledby="reference-heading"><div class="dialog-head"><h2 id="reference-heading">Your cycle references</h2><button class="close-btn" data-close="reference-dialog">Close</button></div><div class="dialog-body"><img class="reference-img" src="reference-cycle.png" alt="User-supplied Oliver Kell price cycle schematic, showing the 10 EMA and 20 EMA, bullish and bearish crossbacks and base breaks."><img class="reference-img" src="reference-chart.png" alt="User-supplied candlestick example of reversal extension, wedge pop, EMA crossback, base break and exhaustion extension."><p class="small muted">Reference images supplied by the user. <a href="https://deepvue.com/screener/oliver-kell-screens/" target="_blank" rel="noopener">Read Deepvue's overview</a> of the cycle concepts. Thresholds in this scanner are our disclosed implementation choices.</p></div></dialog>
+<dialog id="clipboard-dialog" aria-labelledby="clipboard-heading"><div class="dialog-head"><h2 id="clipboard-heading">Copy TradingView symbols</h2><button class="close-btn" data-close="clipboard-dialog">Close</button></div><div class="dialog-body"><p class="small muted">Your browser blocked clipboard access. Select this text and copy it, then paste into TradingView's Add symbols dialog.</p><textarea id="clipboard-text" readonly style="width:100%;height:180px;margin-top:var(--space-4);background:var(--bg);color:var(--text);padding:var(--space-3)" aria-label="TradingView symbols"></textarea></div></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script>
+let DATA_ROOT=['localhost','127.0.0.1'].includes(location.hostname)?'data/':'https://raw.githubusercontent.com/arjunbchavan1989-AB/nse-kell-price-cycle/main/web/data/';
+async function fetchData(path,allowBundledFallback=false){
+  const checked=async response=>{if(!response.ok)throw Error('Data unavailable');if(path==='latest.json'&&(await response.clone().json()).market_data?.mode!=='Independent per-repository acquisition')throw Error('Waiting for independent source data');return response;};
+  const suffix='?v='+Math.floor(Date.now()/60000);
+  try{return await checked(await fetch(DATA_ROOT+path+suffix,{cache:'no-store'}));}
+  catch(error){if(!allowBundledFallback||DATA_ROOT==='data/')throw error;DATA_ROOT='data/';return await checked(await fetch(DATA_ROOT+path+suffix,{cache:'no-store'}));}
+}
+  const $=id=>document.getElementById(id);
+  const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','WD','BC','BD','NC'].map((code,i)=>[code,i]));
+  let data=null, phases={}, selectedPhase='', view='board', active=null, chartData=null, chartRange=120, chartToken=0, toastTimer=null;
+  const number=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const signed=n=>n==null?'—':(n>=0?'+':'')+number(n,2)+'%';
+  const color=n=>n>=0?'up':'down';
+  function element(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+  function notify(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2400);}
+  function tvSymbols(rows){return [...new Set(rows.map(r=>'NSE:'+r.symbol))].join(',');}
+  async function copySymbols(rows,button){
+    if(!rows.length)return;const text=tvSymbols(rows);
+    try{
+      try{await navigator.clipboard.writeText(text);}
+      catch(e){const t=element('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.append(t);t.select();const ok=document.execCommand('copy');t.remove();if(!ok)throw e;}
+      notify(`Copied ${rows.length} symbol${rows.length===1?'':'s'} for TradingView`);
+      const original=button.textContent;button.textContent=`Copied ${rows.length}`;setTimeout(()=>{if(button.isConnected)button.textContent=original;},1800);
+    }catch(e){$('clipboard-text').value=text;$('clipboard-dialog').showModal();$('clipboard-text').select();}
+  }
+  function getRows(){
+    const q=$('search').value.toUpperCase().trim(), dir=$('direction').value, fresh=$('freshness').value, min=Number($('rs-min').value), sort=$('sort').value;
+    const rows=data.rows.filter(r=>(!q||r.symbol.includes(q))&&(!selectedPhase||r.phase===selectedPhase)&&(!dir||r.regime===dir)&&(!min||(r.rs_pct!=null&&r.rs_pct>=min))&&(!fresh||(fresh==='today'?r.signal_today!=null:r.changed)));
+    const key=sort==='change'?'change_pct':sort==='volume'?'vol_ratio':'rs_pct';
+    rows.sort((a,b)=>sort==='symbol'?a.symbol.localeCompare(b.symbol):(b[key]??-Infinity)-(a[key]??-Infinity)||a.symbol.localeCompare(b.symbol));
+    return rows;
+  }
+  function buildSummary(){
+    $('asof').textContent=`EOD ${data.last_trading_date}`;
+    $('updated').textContent=`Built ${new Date(data.generated_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'})} IST`;
+    $('universe-stat').textContent=number(data.qualified_count);
+    $('coverage-stat').textContent=`${number(data.coverage_pct,1)}% eligible history coverage · independently filtered`;
+    $('signals-stat').textContent=number(data.new_signals);$('changes-stat').textContent=number(data.transitions);
+    const bull=data.rows.filter(r=>r.regime==='bullish').length,bear=data.rows.filter(r=>r.regime==='bearish').length,neutral=data.rows.length-bull-bear;
+    $('bull-stat').textContent=`${number(bull)} bullish`;$('bear-stat').textContent=`${number(bear)} bearish`;
+    $('neutral-stat').textContent=`${number(neutral)} mixed / neutral · EMA20 slope confirms the regime`;
+    for(const [count,c] of [[bull,'var(--up)'],[neutral,'var(--faint)'],[bear,'var(--down)']]){const e=element('span');e.style.width=count/data.rows.length*100+'%';e.style.background=c;$('trend-bar').append(e);}
+    $('cycle-strip').replaceChildren();$('secondary-phases').replaceChildren();
+    data.phases.forEach((p,i)=>{
+      phases[p.code]=p;
+      const b=element('button',i<6?'phase-chip':'minor-phase');b.style.setProperty('--phase',p.color);b.dataset.phase=p.code;b.setAttribute('aria-pressed','false');
+      if(i<6){b.append(element('span','code',`${String(i+1).padStart(2,'0')} / ${p.code}`),element('span','number',number(data.counts[p.code])),element('span','phase-name',p.name));const track=element('div','phase-bar'),fill=element('span');fill.style.width=data.counts[p.code]/data.rows.length*100+'%';track.append(fill);b.append(track);}
+      else b.textContent=`${p.name} · ${data.counts[p.code]}`;
+      b.onclick=()=>{selectedPhase=selectedPhase===p.code?'':p.code;render();};(i<6?$('cycle-strip'):$('secondary-phases')).append(b);
+    });
+    const health=data.market_data;const parentNote=`Independent EOD: ${data.last_trading_date}. ${data.qualified_count} stocks pass all four filters.`+(health?` Provider histories: ${health.retrieved_count}/${health.official_listing_count} official listings (${health.listing_history_coverage_pct}%). Unavailable/newly listed histories are not evaluated.`:' Historical snapshot uses the sources recorded when it was created.');
+    $('data-note').textContent=`${parentNote} Rule-based candidates inspired by your Oliver Kell diagrams, not official Kell formulas or trade recommendations. Equity data: Yahoo Finance. RS benchmark: exact NSE MidSmallcap 400 index.`;
+    const age=(Date.now()-Date.parse(data.last_trading_date+'T15:30:00+05:30'))/86400000;
+    if(age>4)$('data-note').textContent+=' This snapshot is more than 4 calendar days old; check the Actions run before using it.';
+  }
+  function makeCard(row){
+    const b=element('button','stock');b.style.setProperty('--phase',phases[row.phase].color);b.setAttribute('aria-label',`${row.symbol}: ${phases[row.phase].name}, open chart`);
+    const top=element('div','stock-top');top.append(element('span','ticker',row.symbol),element('span','chg '+color(row.change_pct),signed(row.change_pct)));
+    const bottom=element('div','stock-bottom');bottom.append(element('span','rs-pill',`RS ${row.rs_pct??'—'}`),element('span','',`${number(row.vol_ratio,1)}× vol`),element('span',row.signal_today?'fresh':'age',row.signal_today?'NEW':row.signal_age!=null?`${row.signal_age}d`:'trend'));
+    b.append(top,bottom);b.onclick=()=>openDetail(row);return b;
+  }
+  function render(){
+    const rows=getRows();$('results').textContent=`${number(rows.length)} of ${number(data.rows.length)} eligible stocks${selectedPhase?' · '+phases[selectedPhase].name:''}`;
+    document.querySelectorAll('[data-phase]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.phase===selectedPhase)));
+    $('board').hidden=view!=='board';$('table-view').hidden=view!=='table';
+    $('board-button').setAttribute('aria-pressed',String(view==='board'));$('table-button').setAttribute('aria-pressed',String(view==='table'));
+    $('board').replaceChildren();
+    data.phases.filter(p=>!selectedPhase||p.code===selectedPhase).sort((a,b)=>(BOARD_ORDER.get(a.code)??Infinity)-(BOARD_ORDER.get(b.code)??Infinity)).forEach(p=>{
+      const group=rows.filter(r=>r.phase===p.code),lane=element('article','lane');lane.style.setProperty('--phase',p.color);
+      const head=element('div','lane-head'),title=element('div');title.append(element('span','code',p.code),element('h3','',p.name));head.append(title,element('span','lane-count',group.length));
+      const copy=element('button','copy',`Copy TV (${group.length})`);copy.disabled=!group.length;copy.setAttribute('aria-label',`Copy all ${p.name} symbols for TradingView`);copy.onclick=()=>copySymbols(group,copy);
+      const cards=element('div','cards');if(group.length)group.forEach(r=>cards.append(makeCard(r)));else cards.append(element('div','empty-lane','No stocks match these filters.'));
+      lane.append(head,copy,cards);$('board').append(lane);
+    });
+    $('table-body').replaceChildren();
+    rows.forEach(r=>{
+      const tr=element('tr');tr.tabIndex=0;
+      const cells=[r.symbol,'₹'+number(r.close,2),signed(r.change_pct),phases[r.phase].name,r.signal_today?'NEW':r.signal_age!=null?r.signal_age+' sessions':'—',r.regime,r.rs_pct??'—',signed(r.rs_excess_pct).replace('%',' pp'),number(r.vol_ratio,2)+'×',number(r.extension10_atr,2),number(r.market_cap_cr,1),number(r.avg_range_pct_20d,2)+'%'];
+      cells.forEach((v,i)=>{const td=element('td',i===2?color(r.change_pct):'',String(v));if(i===3){td.textContent='';const pill=element('span','phase-pill',v);pill.style.setProperty('--phase',phases[r.phase].color);td.append(pill);}tr.append(td);});
+      tr.onclick=()=>openDetail(r);tr.onkeydown=e=>{if(e.key==='Enter')openDetail(r);};$('table-body').append(tr);
+    });
+  }
+  function reset(){selectedPhase='';$('search').value='';$('direction').value='';$('freshness').value='';$('rs-min').value='0';$('sort').value='rs';render();}
+  function exportCsv(){
+    const rows=getRows(),fields=['symbol','phase','regime','signal_today','signal_age','close','change_pct','rs_pct','rs_excess_pct','vol_ratio','market_cap_cr','avg_vol_20d','avg_rvol_20d_cr','avg_range_pct_20d','date'];
+    const quote=v=>'"'+String(v??'').replaceAll('"','""')+'"',text=[fields.map(quote).join(','),...rows.map(r=>fields.map(f=>quote(r[f])).join(','))].join('\r\n');
+    const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8;'})),a=element('a');a.href=url;a.download=`nse-kell-${data.last_trading_date}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Exported ${rows.length} stocks`);
+  }
+  function metric(label,value){const e=element('div','metric');e.append(element('span','label',label),element('span','value',value));return e;}
+  async function openDetail(row){
+    active=row;chartData=null;const token=++chartToken;
+    $('detail-heading').textContent=row.symbol+' / Daily price cycle';$('detail-phase').textContent=phases[row.phase].name;$('detail-phase').style.setProperty('--phase',phases[row.phase].color);
+    $('detail-price').textContent='₹'+number(row.close,2);$('detail-change').textContent=signed(row.change_pct);$('detail-change').className='mono '+color(row.change_pct);
+    $('detail-metrics').replaceChildren(...[
+      ['RS rank / 63 sessions',row.rs_pct??'—'],['Excess vs MidSmallcap 400',signed(row.rs_excess_pct).replace('%',' pp')],['EMA10 / EMA20',number(row.ema10,2)+' / '+number(row.ema20,2)],['ATR14',number(row.atr,2)],
+      ['ATR from EMA10',number(row.extension10_atr,2)],['Prior-20D volume ratio',number(row.vol_ratio,2)+'×'],['Market cap',number(row.market_cap_cr,1)+' cr'],['Avg range / 20D',number(row.avg_range_pct_20d,2)+'%'],
+      ['Avg volume / 20D',number(row.avg_vol_20d)],['Avg rupee vol / 20D','₹'+number(row.avg_rvol_20d_cr,2)+' cr'],['Base width / contraction',number(row.base_width_atr,2)+' ATR / '+number(row.contraction_ratio,2)],['Prior phase / signal age',phases[row.previous_phase].name+' / '+(row.signal_age!=null?row.signal_age+'d':'—')]
+    ].map(([l,v])=>metric(l,String(v))));
+    $('detail-reasons').replaceChildren(...row.reasons.map(t=>element('li','',t)));
+    if(row.retest_highs)$('detail-reasons').append(element('li','','Retest-of-highs flag: price revisits a recent exhaustion high without closing at the high.'));
+    $('chart-tip').textContent='Loading daily candles...';$('event-list').replaceChildren();
+    $('detail-dialog').showModal();drawChart();
+    try{const r=await fetchData('charts/'+encodeURIComponent(row.symbol)+'.json');if(!r.ok)throw Error('Chart unavailable');const chart=await r.json();if(chart.date!==data.last_trading_date)throw Error('Chart session mismatch');if(token!==chartToken)return;chartData=chart;$('chart-tip').textContent='Move over the chart to inspect a candle';chart.events.slice(-10).forEach(e=>{const t=element('span','event-tag',`${e.date} ${e.code}`);t.style.color=phases[e.code].color;$('event-list').append(t);});requestAnimationFrame(()=>drawChart());}
+    catch(e){if(token===chartToken)$('chart-tip').textContent='Chart could not be loaded. Scan metrics remain available.';}
+  }
+  function drawChart(hover=-1){
+    const canvas=$('price-chart'),box=canvas.parentElement,rect=box.getBoundingClientRect(),w=rect.width,h=rect.height,dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+    const style=getComputedStyle(document.documentElement),text=style.getPropertyValue('--muted').trim(),line=style.getPropertyValue('--line').trim(),up=style.getPropertyValue('--up').trim(),down=style.getPropertyValue('--down').trim();
+    ctx.clearRect(0,0,w,h);if(!chartData)return;const bars=chartData.bars.slice(-chartRange);if(!bars.length)return;
+    const left=10,right=w-65,top=25,bottom=h*.72,volTop=h*.79,volBottom=h-28,step=(right-left)/bars.length;
+    const max=Math.max(...bars.flatMap(b=>[b.h,b.e10??b.h,b.e20??b.h])),min=Math.min(...bars.flatMap(b=>[b.l,b.e10??b.l,b.e20??b.l])),pad=(max-min)*.06||1,lo=min-pad,hi=max+pad;
+    const y=v=>bottom-(v-lo)/(hi-lo)*(bottom-top),x=i=>left+step*(i+.5),maxVol=Math.max(...bars.map(b=>b.v))||1;
+    ctx.font='12px "IBM Plex Mono",monospace';ctx.fillStyle=text;ctx.strokeStyle=line;ctx.lineWidth=1;
+    for(let i=0;i<5;i++){const value=lo+(hi-lo)*i/4,yy=y(value);ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(right,yy);ctx.stroke();ctx.fillText(number(value,1),right+7,yy+4);}
+    bars.forEach((b,i)=>{const c=b.c>=b.o?up:down;ctx.strokeStyle=c;ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x(i),y(b.h));ctx.lineTo(x(i),y(b.l));ctx.stroke();const bw=Math.max(1,Math.min(step*.65,9)),by=Math.min(y(b.o),y(b.c)),bh=Math.max(1,Math.abs(y(b.o)-y(b.c)));ctx.fillRect(x(i)-bw/2,by,bw,bh);ctx.globalAlpha=.5;ctx.fillRect(x(i)-bw/2,volBottom-b.v/maxVol*(volBottom-volTop),bw,b.v/maxVol*(volBottom-volTop));ctx.globalAlpha=1;});
+    for(const [key,c]of[['e10','#ee9c69'],['e20','#59b5ed']]){ctx.strokeStyle=c;ctx.lineWidth=1.4;ctx.beginPath();let begun=false;bars.forEach((b,i)=>{if(b[key]==null)return;if(!begun){ctx.moveTo(x(i),y(b[key]));begun=true;}else ctx.lineTo(x(i),y(b[key]));});ctx.stroke();}
+    const eventMap=new Map(chartData.events.map(e=>[e.date,e.code]));bars.forEach((b,i)=>{if(!eventMap.has(b.t))return;const code=eventMap.get(b.t);ctx.fillStyle=phases[code].color;const yy=y(b.l)+8;ctx.beginPath();ctx.moveTo(x(i),yy);ctx.lineTo(x(i)-3,yy+5);ctx.lineTo(x(i)+3,yy+5);ctx.closePath();ctx.fill();});
+    ctx.fillStyle=text;for(const i of[0,Math.floor(bars.length/2),bars.length-1]){ctx.textAlign=i===0?'left':i===bars.length-1?'right':'center';ctx.fillText(bars[i].t,left+(right-left)*i/Math.max(1,bars.length-1),h-8);}ctx.textAlign='left';
+    if(hover>=0&&hover<bars.length){ctx.setLineDash([3,3]);ctx.strokeStyle=text;ctx.beginPath();ctx.moveTo(x(hover),top);ctx.lineTo(x(hover),volBottom);ctx.stroke();ctx.setLineDash([]);const b=bars[hover];$('chart-tip').textContent=`${b.t}  O ${number(b.o,2)}  H ${number(b.h,2)}  L ${number(b.l,2)}  C ${number(b.c,2)}  Vol ${number(b.v)}${eventMap.has(b.t)?'  '+eventMap.get(b.t):''}`;}
+    canvas.onpointermove=e=>drawChart(Math.max(0,Math.min(bars.length-1,Math.floor((e.offsetX-left)/step))));
+  }
+  function buildRules(){
+    const rules={
+      RE:'Close is at least 3 ATR14 below EMA20 and the low reaches the current 20-session low. Oversold extension candidate only: this does not confirm a reversal.',
+      WP:'After at least 5 of the prior 15 closes were below EMA20, price reclaims both EMAs, exceeds the prior 5-session high, and volume is at least 1.2× its prior 20-session average.',
+      CB:'The first confirmed retest within 30 sessions of a Wedge Pop. Low is within 0.5 ATR of EMA10 or EMA20; EMA20 is not falling; close holds EMA20, rises versus yesterday and closes in the upper 40% of its range.',
+      BB:'Bullish EMA stack and rising EMA20. Close breaks the prior 10-session high; base width is at most 4 ATR; the prior 5-session mean True Range is at most 0.85× the prior 20-session mean; volume is at least 1.2×.',
+      EE:'Close is above EMA20 and at least 3 ATR above EMA10. Alternatively, the high is at least 4 ATR above EMA10, volume ≥1.5×, and the close is in the lower 40% of the day. Extension risk, not a confirmed top.',
+      WD:'After at least 5 of the prior 15 closes were above EMA20, price loses both EMAs and breaks the prior 5-session low on volume ≥1.2×. EMA/support-loss approximation of a Wedge Drop.',
+      BC:'Mirror of the first bullish Crossback: within 30 sessions of a Wedge Drop, a rally tests EMA resistance within 0.5 ATR and closes below EMA20, below yesterday and in the lower 40% of the day.',
+      BD:'Mirror of bullish Base Break: bearish EMA stack, falling EMA20 and the same base-contraction conditions, then a close below the prior 10-session low on volume ≥1.2×.',
+      TR:'Price, EMA10/EMA20 alignment and EMA20 slope agree on trend, but no fresh or compatible recent named setup qualifies. This is a holding lane, not a buy signal.',
+      NC:'Mixed EMA structure, insufficient 100-bar warm-up, or no qualifying named setup. Ambiguous stocks remain unclassified rather than being forced into a cycle phase.'
+    };
+    data.phases.forEach(p=>{const e=element('article','rule');e.style.setProperty('--phase',p.color);e.append(element('h3','',p.code+' / '+p.name),element('p','',rules[p.code]));$('rule-list').append(e);});
+  }
+  function bind(){
+    $('search').oninput=render;for(const id of['direction','freshness','rs-min','sort'])$(id).onchange=render;
+    $('board-button').onclick=()=>{view='board';render();};$('table-button').onclick=()=>{view='table';render();};$('reset-button').onclick=reset;$('csv-button').onclick=exportCsv;
+    $('rules-button').onclick=()=>$('rules-dialog').showModal();$('reference-button').onclick=()=>$('reference-dialog').showModal();
+    document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
+    document.querySelectorAll('dialog').forEach(d=>d.onclick=e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}});
+    $('copy-symbol').onclick=()=>copySymbols([active],$('copy-symbol'));
+    document.querySelectorAll('.range-button').forEach(b=>b.onclick=()=>{chartRange=Number(b.dataset.range);document.querySelectorAll('.range-button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));drawChart();});
+    $('theme-button').onclick=()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'light':'dark';$('theme-button').textContent=dark?'Dark':'Light';$('theme-button').setAttribute('aria-label',dark?'Switch to dark theme':'Switch to light theme');drawChart();};
+    new ResizeObserver(()=>{if($('detail-dialog').open)drawChart();}).observe($('price-chart').parentElement);
+  }
+  async function init(){
+    bind();
+    try{const response=await fetchData('latest.json',true);if(!response.ok)throw Error('Snapshot unavailable');data=await response.json();if(!Array.isArray(data.rows)||!data.rows.length)throw Error('The scanner has not produced a valid snapshot yet');buildSummary();buildRules();$('loading').hidden=true;render();}
+    catch(e){$('loading').hidden=true;$('error').hidden=false;$('error').textContent=e.message+'. Check the GitHub Actions run; the dashboard will not invent scan results.';}
+  }
+  init();
+</script>
+</body></html>

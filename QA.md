@@ -39,4 +39,6 @@ Chromium checks passed at 1440 × 900 and 390 × 844. Full Reversal Extension co
 
 Both uploaded reference images loaded. Scan rules displayed all ten labels. Chart hover displayed OHLC and volume. Dark/light round trip passed; phase-text light-mode contrast was strengthened. Dense 602-stock Trend / Holding lane scrolls without shrinking or clipping card content. Mobile page and detail-dialog widths do not overflow their containers.
 
-Injected snapshot and chart failures displayed honest error messages. No JavaScript page errors were observed. Charts and dialogs were visually inspected on desktop and mobile. Public-host deployment checks are completed separately after the Actions run.
+Injected snapshot and chart failures displayed honest error messages. No JavaScript page errors were observed. Charts and dialogs were visually inspected on desktop and mobile.
+
+The first GitHub scanner run and the final full refresh both completed successfully. The final [verified Actions run](https://github.com/arjunbchavan1989-AB/nse-kell-price-cycle/actions/runs/38510212182) passed all 12 tests, restored 839 fresh histories, fetched the remaining ten, and produced 849 eligible stocks with 100% same-session coverage. GitHub Pages reports `built`. A live Chromium visit confirmed the polished cards are 74px high with 74px content height and `flex-shrink: 0`, and the live build timestamp matches the final refresh.

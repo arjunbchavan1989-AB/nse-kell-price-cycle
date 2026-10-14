@@ -118,6 +118,8 @@ def scan(source_file=None,seed_cache=None):
         raise RuntimeError(f"History coverage below 95% ({len(histories)}/{len(mapping)}); retaining last good snapshot")
     # Exclude stale daily histories rather than mixing sessions in breadth stats.
     session=max(f.index[-1] for f in histories.values())
+    if session != end:
+        raise RuntimeError("Price session does not match the shared universe EOD; retaining last good output")
     current={s:f for s,f in histories.items() if f.index[-1]==session}
     if len(current)/len(mapping)<.95:
         raise RuntimeError(f"Same-session coverage below 95% ({len(current)}/{len(mapping)})")

@@ -30,3 +30,13 @@
 - First hosted pipeline run succeeds and creates the gh-pages branch.
 - GitHub Pages live index and JSON are reachable and match committed output.
 - The separate Perplexity preview is a captured snapshot; GitHub Pages is the daily-updating deployment.
+
+## Local results, 14 October 2026
+
+Twelve regression tests passed, including publication guards that preserve a sentinel last-good snapshot on insufficient coverage or a price/universe session mismatch. The initial scan covers 849/849 source candidates for the shared universe's 12 October session, with 849 passing the four filters. Phase counts sum to the unique row count, all strict threshold checks pass, and every row has its chart file.
+
+Chromium checks passed at 1440 × 900 and 390 × 844. Full Reversal Extension column copy contained the exact 16 expected symbols; searching COCHINSHIP copied only `NSE:COCHINSHIP`; an impossible search disabled every column copy button. Combining bullish direction, fresh signals and RS ≥80 produced three table rows. All sort options, phase focus/reset, board/table round trip, CSV download, single-symbol copy, and chart ranges were exercised.
+
+Both uploaded reference images loaded. Scan rules displayed all ten labels. Chart hover displayed OHLC and volume. Dark/light round trip passed; phase-text light-mode contrast was strengthened. Dense 602-stock Trend / Holding lane scrolls without shrinking or clipping card content. Mobile page and detail-dialog widths do not overflow their containers.
+
+Injected snapshot and chart failures displayed honest error messages. No JavaScript page errors were observed. Charts and dialogs were visually inspected on desktop and mobile. Public-host deployment checks are completed separately after the Actions run.

@@ -4,6 +4,8 @@ A daily price-cycle dashboard for the same eligible candidate universe as the NS
 
 ## Dashboard
 
+The daily-updating deployment is [NSE Price Cycle on GitHub Pages](https://arjunbchavan1989-ab.github.io/nse-kell-price-cycle/). Code and manual updates are available in the [public repository](https://github.com/arjunbchavan1989-AB/nse-kell-price-cycle) and its [Actions tab](https://github.com/arjunbchavan1989-AB/nse-kell-price-cycle/actions).
+
 - **Cycle lanes:** Reversal Extension, Wedge Pop, EMA Crossback, Base 'n Break, Exhaustion Extension, Wedge Drop, bearish crossback and bearish base break, plus Trend / Holding and No Clear Setup.
 - **Diagnostics:** 180 daily candlesticks, EMA10/20, volume, historical setup markers, reasons, signal age, and daily phase changes.
 - **Relative strength:** 63 common-session excess return versus the exact Nifty MidSmallcap 400, then percentile ranking within the qualified scan.

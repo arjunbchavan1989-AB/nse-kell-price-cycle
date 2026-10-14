@@ -1,6 +1,6 @@
 # NSE Oliver Kell Price Cycle
 
-A daily price-cycle dashboard for the same eligible candidate universe as the NSE Stage Analysis dashboard. It implements transparent daily-bar approximations of the supplied Oliver Kell diagrams, not proprietary Kell formulas or trading advice.
+A standalone daily price-cycle dashboard that builds its own NSE universe and downloads its own EOD prices and shares outstanding. It implements transparent daily-bar approximations of the supplied Oliver Kell diagrams, not proprietary Kell formulas or trading advice. No other dashboard feed or repository is needed.
 
 ## Dashboard
 
@@ -18,21 +18,22 @@ The framework sequence and 10/20 EMA concepts follow the supplied images and [De
 
 All comparisons are strict: market cap > ₹500 crore; 20-session average shares volume > 70,000; 20-session mean close × volume > ₹3 crore; 20-session average daily range percentage > 3%.
 
-Range compatibility deliberately preserves the existing stage dashboard's calculation: mean(True Range / previous close × 100). This includes gaps and is not the gap-excluding mean((high − low) / close × 100) ADR convention.
+The range calculation is mean(True Range / previous close × 100). This includes gaps and is not the gap-excluding mean((high − low) / close × 100) ADR convention.
 
-Candidate membership and implied shares come from the existing [stage dashboard feed](https://arjunbchavan1989-ab.github.io/nse-stage-analysis/data/latest.json). This is not a fresh exhaustive NSE-wide market-cap census; stocks absent from that feed cannot enter this scanner. Market cap is re-marked using the source's market cap / close implied shares and the raw scan close. Price, liquidity, range, and benchmark calculations are anchored to that shared universe's session.
+Each run refreshes the official [NSE EQ listing](https://archives.nseindia.com/content/equities/EQUITY_L.csv), obtains its own Yahoo OHLCV histories and daily shares outstanding, and applies all four filters locally. Market cap is own shares × own raw EOD close. The latest completed session is checked against a dated NSE index archive before classification. No candidate membership, caps, prices or signals come from another dashboard. New eligible stocks can enter directly from the official listing.
+
+Provider coverage is not an exhaustive market-cap census: unavailable Yahoo symbols and listings with fewer than 21 positive-volume bars cannot be evaluated. Snapshot diagnostics report official listing count, retrieved history count, missing symbols, same-session coverage and shares coverage. Under-65% broad listing/history coverage, under-95% same-session coverage among retrieved histories, or under-95% shares coverage among liquidity-qualified stocks stop publication. Eligible chart coverage is reported separately and must not be confused with broad listing coverage. Only this repository's caches are used.
 
 Equity OHLCV uses Yahoo Finance via yfinance. Benchmark closes use the exact named row in [NSE's index archive](https://archives.nseindia.com/content/indices/ind_close_all_13102026.csv); a different index is never substituted. The earlier migration to NSE-only equity prices remains paused. Technical OHLC prices are adjusted using Yahoo's Adj Close / Close factor; displayed latest close and liquidity filters use raw close.
 
 ## Daily automation
 
-The GitHub Actions workflow is scheduled Monday to Friday at **19:30 IST (14:00 UTC)**. Before scanning it waits for this evening's validated Stage batch from public GitHub `main`, not a cached Pages response. EP then waits for Kell's matching batch: Stage → Kell → EP. GitHub scheduled runs can be delayed; 19:30 is the scheduled start, not a guaranteed completion time. Holidays have no new bars; the previous completed session remains visible. Actions also supports Run workflow manually; refresh Stage first or start it alongside the downstream waits.
+The GitHub Actions workflow is scheduled **every day at 19:30 IST (14:00 UTC)**. It fetches its own inputs and updates independently of EP or any other dashboard. GitHub scheduled runs can be delayed; 19:30 is the scheduled start, not a guaranteed completion time. Weekends and holidays have no new bars; the previous completed session remains visible. Actions supports Run workflow manually at any time; before 19:00 IST the scanner uses the previous completed session.
 
-Fresh-batch waiting needs no additional secret. If Stage does not publish a valid
-batch within two hours, Kell fails visibly and retains the last good dashboard.
+No paid data key, cross-repository token or upstream workflow is required.
 `refresh_data=false` remains available for UI-only deployment.
 
-At least 95% of source candidates must have histories for the same scan session. Snapshots older than four calendar days, stale source feeds, missing benchmark data, or empty universes fail the scan. Failed runs do not commit or deploy partial output and retain the last good published snapshot. A cached history speeds subsequent scans; no paid data keys or secrets are needed.
+At least 95% of independently qualified candidates must have histories for the same scan session. Snapshots older than four calendar days, missing benchmark data, or empty universes fail the scan. Failed runs do not commit or deploy partial output and retain the last good published snapshot. An own-repository cache speeds subsequent scans.
 
 GitHub Pages deploys `web/` to the `gh-pages` branch. Repository Settings → Pages should select `gh-pages`, `/ (root)`. The public repository includes code, market-data snapshots, and the supplied reference images. Ensure any continued public redistribution of images/data complies with their owners' terms.
 

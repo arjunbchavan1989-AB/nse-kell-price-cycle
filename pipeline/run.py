@@ -1,9 +1,4 @@
-"""Daily scanner for a shared Indian-equity universe.
-
-Uses the existing stage dashboard's candidate universe and shares-based market
-capitalization; rechecks its four liquidity/size filters at this scan's close.
-Equity OHLCV stays on Yahoo: the user paused the separate NSE migration.
-"""
+"""Independent daily Oliver Kell scanner. No other dashboard data is consumed."""
 import argparse
 import json
 import logging
@@ -17,13 +12,14 @@ import pandas as pd
 import yfinance as yf
 from benchmark import load as load_benchmark, excess, NAME as BENCHMARK
 from cycle import classify, CONFIG, PHASES
+from market_data import build as build_market_inputs
 
 HERE=Path(__file__).parent
 ROOT=HERE.parent
 CACHE=HERE/"cache"
 CACHE.mkdir(exist_ok=True)
 WEB=ROOT/"web"
-FEED="https://arjunbchavan1989-ab.github.io/nse-stage-analysis/data/latest.json"
+FEED="Independent acquisition: official NSE listing, Yahoo EOD prices and shares"
 FILTERS={"min_market_cap_cr":500, "min_avg_volume_shares":70000, "min_avg_rupee_vol_cr":3,
          "min_avg_daily_range_pct":3, "avg_volume_window_days":20}
 LOG=logging.getLogger("kell")
@@ -34,20 +30,17 @@ def completed_date():
     return now.date() if now.hour>=19 else now.date()-timedelta(days=1)
 
 
-def get_universe(source_file=None):
-    if source_file:
-        data=json.loads(Path(source_file).read_text())
-    else:
-        with urlopen(Request(FEED,headers={"User-Agent":"NSE-Kell-Dashboard/1.0"}),timeout=30) as r:
-            data=json.load(r)
+def get_universe():
+    data,frames=build_market_inputs()
+    data["_histories"]=frames
     if not data.get("rows") or not data.get("last_trading_date"):
-        raise RuntimeError("Shared universe feed is empty or malformed")
+        raise RuntimeError("Independent universe is empty or malformed")
     for k,v in FILTERS.items():
         if data.get("filters",{}).get(k)!=v:
-            raise RuntimeError(f"Shared universe changed its {k} filter")
+            raise RuntimeError(f"Independent universe changed its {k} filter")
     asof=pd.Timestamp(data["last_trading_date"]).date()
     if (completed_date()-asof).days>7:
-        raise RuntimeError("Shared universe is more than 7 calendar days old; retaining last good output")
+        raise RuntimeError("Independent universe is stale; retaining last good output")
     return data
 
 
@@ -105,21 +98,23 @@ def safe(value,digits=2):
     return round(float(value),digits) if value is not None and np.isfinite(value) else None
 
 
-def scan(source_file=None,seed_cache=None):
-    source=get_universe(source_file)
+def scan():
+    source=get_universe()
     mapping={r["symbol"]:r for r in source["rows"]}
-    # Anchor every price/filter/benchmark calculation to the shared universe EOD.
-    # Never combine a newer stock close with an older candidate-universe session.
+    # Prices, shares and eligibility are acquired inside this repository.
     end=pd.Timestamp(source["last_trading_date"])
     if end.date()>completed_date():
-        raise RuntimeError("Shared universe refers to an incomplete/future session")
-    histories,missing=download(list(mapping),end,seed_cache)
+        raise RuntimeError("Independent universe refers to an incomplete/future session")
+    if "_histories" in source:
+        histories,missing=source["_histories"],[]
+    else:
+        histories,missing=download(list(mapping),end)
     if not histories or len(histories)/len(mapping)<.95:
         raise RuntimeError(f"History coverage below 95% ({len(histories)}/{len(mapping)}); retaining last good snapshot")
     # Exclude stale daily histories rather than mixing sessions in breadth stats.
     session=max(f.index[-1] for f in histories.values())
     if session != end:
-        raise RuntimeError("Price session does not match the shared universe EOD; retaining last good output")
+        raise RuntimeError("Price session does not match the independent universe EOD; retaining last good output")
     current={s:f for s,f in histories.items() if f.index[-1]==session}
     if len(current)/len(mapping)<.95:
         raise RuntimeError(f"Same-session coverage below 95% ({len(current)}/{len(mapping)})")
@@ -177,18 +172,18 @@ def scan(source_file=None,seed_cache=None):
     phases=[{"code":c,"name":n,"color":color,"family":family} for c,n,color,family in PHASES]
     payload={
         "generated_at":datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-        "upstream_generated_at":source["generated_at"],
+        "market_data":source.get("market_data",{}),
         "refresh_batch":source.get("refresh_batch"),
         "last_trading_date":str(session.date()),"universe_date":source["last_trading_date"],
         "universe_source":FEED,"candidate_count":len(mapping),"retrieved_count":len(histories),
         "current_session_count":len(current),"qualified_count":len(rows),
         "coverage_pct":safe(len(current)/len(mapping)*100),
         "missing_symbols":sorted(set(mapping)-set(current)),"benchmark":BENCHMARK,
-        "filters":FILTERS,"range_definition":"20-session mean of daily True Range / previous close × 100 (compatible with the existing dashboard)",
+        "filters":FILTERS,"range_definition":"20-session mean of daily True Range / previous close × 100",
         "classification":"Rule-based approximation of the supplied Oliver Kell diagrams; not official/proprietary Kell formulas",
         "data_sources":{"equity_prices":"Yahoo Finance via yfinance","benchmark":"NSE index-close archives",
-                        "market_cap":"Shared-universe market cap, re-marked to the scan close using implied shares",
-                        "universe":"Existing NSE stage-analysis dashboard candidate feed"},
+                        "market_cap":"Own daily shares outstanding × own raw EOD close",
+                        "universe":"Official NSE EQ listing, independently filtered in this repository"},
         "config":CONFIG,"phases":phases,"counts":counts,
         "new_signals":sum(r["signal_today"] is not None for r in rows),
         "transitions":sum(r["changed"] for r in rows),"rows":sorted(rows,key=lambda r:r["symbol"]),
@@ -208,8 +203,6 @@ def scan(source_file=None,seed_cache=None):
 
 if __name__=="__main__":
     p=argparse.ArgumentParser()
-    p.add_argument("--source-file")
-    p.add_argument("--seed-cache")
     a=p.parse_args()
     logging.basicConfig(level=logging.INFO,format="%(asctime)s %(message)s")
-    scan(a.source_file,a.seed_cache)
+    scan()

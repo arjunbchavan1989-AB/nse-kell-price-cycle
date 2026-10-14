@@ -1,8 +1,8 @@
 name: Daily Kell Scan and Pages
 on:
   schedule:
-    # 19:30 IST; wait for the Stage workflow's fresh batch before scanning.
-    - cron: '0 14 * * 1-5'
+    # 19:30 IST. Independent acquisition, with no other dashboard dependency.
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       refresh_data:
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-24.04
-    timeout-minutes: 165
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -35,33 +35,23 @@ jobs:
       - uses: actions/cache/restore@v5
         with:
           path: pipeline/cache
-          key: kell-history-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: kell-history-${{ runner.os }}-
+          key: kell-own-market-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: kell-own-market-${{ runner.os }}-
       - name: Install scanner dependencies
         run: pip install -r pipeline/requirements.txt
       - name: Regression tests
         run: python -m unittest discover -s tests -v
-      - name: Checkout upstream Stage universe
-        if: github.event_name != 'workflow_dispatch' || inputs.refresh_data
-        uses: actions/checkout@v6
-        with:
-          repository: arjunbchavan1989-AB/nse-stage-analysis
-          path: .upstream
-          sparse-checkout: web/data
-      - name: Wait for this evening's validated Stage batch
-        if: github.event_name != 'workflow_dispatch' || inputs.refresh_data
-        run: python pipeline/wait_upstream.py --checkout .upstream
-      - name: Scan the completed shared-universe session
+      - name: Fetch own NSE universe and scan completed EOD prices
         if: github.event_name != 'workflow_dispatch' || inputs.refresh_data
         shell: bash
         run: |
           set -euo pipefail
-          python pipeline/run.py --source-file .upstream/web/data/latest.json 2>&1 | tee /tmp/kell-scan.log
+          python pipeline/run.py 2>&1 | tee /tmp/kell-scan.log
       - uses: actions/cache/save@v5
-        if: github.event_name != 'workflow_dispatch' || inputs.refresh_data
+        if: always() && (github.event_name != 'workflow_dispatch' || inputs.refresh_data)
         with:
           path: pipeline/cache
-          key: kell-history-${{ runner.os }}-${{ github.run_id }}
+          key: kell-own-market-${{ runner.os }}-${{ github.run_id }}
       - name: Commit validated snapshot
         run: |
           git config user.name 'github-actions[bot]'

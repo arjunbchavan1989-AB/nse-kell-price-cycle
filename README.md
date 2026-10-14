@@ -42,7 +42,7 @@ chart files are not mixed.
 
 At least 95% of independently qualified candidates must have histories for the same scan session. Snapshots older than four calendar days, missing benchmark data, or empty universes fail the scan. Failed runs do not commit or deploy partial output and retain the last good published snapshot. An own-repository cache speeds subsequent scans.
 
-GitHub Pages deploys `web/` to the `gh-pages` branch. Repository Settings → Pages should select `gh-pages`, `/ (root)`. The public repository includes code, market-data snapshots, and the supplied reference images. Ensure any continued public redistribution of images/data complies with their owners' terms.
+GitHub's native Pages actions configure, upload and deploy a validated `web/` artifact. Repository Settings → Pages uses **GitHub Actions** as its build source (configured for the live repository). Publication is verified inside the daily workflow, so a failed deployment cannot leave the scan green while a separate legacy branch build fails. The public repository includes code, market-data snapshots, and the supplied reference images. Ensure any continued public redistribution of images/data complies with their owners' terms.
 
 ## Local commands
 

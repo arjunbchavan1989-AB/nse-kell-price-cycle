@@ -26,7 +26,11 @@ Equity OHLCV uses Yahoo Finance via yfinance. Benchmark closes use the exact nam
 
 ## Daily automation
 
-The GitHub Actions workflow runs Monday to Friday at **20:00 IST (14:30 UTC)**, after the existing universe's scheduled 19:00 IST refresh. GitHub scheduled runs may be delayed. Holidays have no new bars; the previous completed session remains visible. Actions also supports Run workflow manually.
+The GitHub Actions workflow is scheduled Monday to Friday at **19:30 IST (14:00 UTC)**. Before scanning it waits for this evening's validated Stage batch from public GitHub `main`, not a cached Pages response. EP then waits for Kell's matching batch: Stage → Kell → EP. GitHub scheduled runs can be delayed; 19:30 is the scheduled start, not a guaranteed completion time. Holidays have no new bars; the previous completed session remains visible. Actions also supports Run workflow manually; refresh Stage first or start it alongside the downstream waits.
+
+Fresh-batch waiting needs no additional secret. If Stage does not publish a valid
+batch within two hours, Kell fails visibly and retains the last good dashboard.
+`refresh_data=false` remains available for UI-only deployment.
 
 At least 95% of source candidates must have histories for the same scan session. Snapshots older than four calendar days, stale source feeds, missing benchmark data, or empty universes fail the scan. Failed runs do not commit or deploy partial output and retain the last good published snapshot. A cached history speeds subsequent scans; no paid data keys or secrets are needed.
 

@@ -123,7 +123,7 @@ def scan(source_file=None,seed_cache=None):
     current={s:f for s,f in histories.items() if f.index[-1]==session}
     if len(current)/len(mapping)<.95:
         raise RuntimeError(f"Same-session coverage below 95% ({len(current)}/{len(mapping)})")
-    if (end-session).days>4:
+    if (completed_date()-session.date()).days>4:
         raise RuntimeError("Price data is stale by more than 4 calendar days")
     benchmark=load_benchmark(str(session.date()))
     rows=[]
@@ -177,6 +177,8 @@ def scan(source_file=None,seed_cache=None):
     phases=[{"code":c,"name":n,"color":color,"family":family} for c,n,color,family in PHASES]
     payload={
         "generated_at":datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+        "upstream_generated_at":source["generated_at"],
+        "refresh_batch":source.get("refresh_batch"),
         "last_trading_date":str(session.date()),"universe_date":source["last_trading_date"],
         "universe_source":FEED,"candidate_count":len(mapping),"retrieved_count":len(histories),
         "current_session_count":len(current),"qualified_count":len(rows),

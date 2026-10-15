@@ -1,5 +1,11 @@
 # Verification inventory
 
+## No Clear Setup display-order change
+
+- Required: board sequence RE /WP /CB /BB /EE /TR /NC /WD /BC /BD; NC must immediately follow TR, with TR still immediately after EE.
+- Guard all10 lanes and their existing classifier behavior; pipeline files and phase signal precedence must remain unchanged.
+- Check the rendered order on desktop/mobile, after a no-results search and a board/table round trip. These are display-only changes and require a UI-only deployment, not a new market-data acquisition.
+
 ## Scanner
 
 - Wilder ATR seed and recursion; breakout pivots and volume references exclude the current bar.

@@ -139,7 +139,7 @@ async function fetchData(path,allowBundledFallback=false){
   catch(error){if(!allowBundledFallback||DATA_ROOT==='data/')throw error;DATA_ROOT='data/';return await checked(await fetch(DATA_ROOT+path+suffix,{cache:'no-store'}));}
 }
   const $=id=>document.getElementById(id);
-  const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','WD','BC','BD','NC'].map((code,i)=>[code,i]));
+  const BOARD_ORDER=new Map(['RE','WP','CB','BB','EE','TR','NC','WD','BC','BD'].map((code,i)=>[code,i]));
   let data=null, phases={}, selectedPhase='', view='board', active=null, chartData=null, chartRange=120, chartToken=0, toastTimer=null;
   const number=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d});
   const signed=n=>n==null?'—':(n>=0?'+':'')+number(n,2)+'%';

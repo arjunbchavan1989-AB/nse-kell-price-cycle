@@ -3,6 +3,8 @@ on:
   schedule:
     # 19:30 IST. Independent acquisition, with no other dashboard dependency.
     - cron: '0 14 * * *'
+    - cron: '15 14 * * *' # 19:45 IST guarded fallback
+    - cron: '30 14 * * *' # 20:00 IST guarded fallback
   workflow_dispatch:
     inputs:
       refresh_data:
@@ -32,6 +34,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: main
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -46,14 +50,17 @@ jobs:
         run: pip install -r pipeline/requirements.txt
       - name: Regression tests
         run: python -m unittest discover -s tests -v
+      - name: Check own completed-session freshness
+        id: freshness
+        run: python pipeline/refresh_guard.py --snapshot web/data/latest.json --event "${{ github.event_name }}" --refresh-data "${{ inputs.refresh_data }}" --push-refresh
       - name: Fetch own NSE universe and scan completed EOD prices
-        if: github.event_name != 'workflow_dispatch' || inputs.refresh_data
+        if: steps.freshness.outputs.refresh == 'true'
         shell: bash
         run: |
           set -euo pipefail
           python pipeline/run.py 2>&1 | tee /tmp/kell-scan.log
       - uses: actions/cache/save@v5
-        if: always() && (github.event_name != 'workflow_dispatch' || inputs.refresh_data)
+        if: always() && steps.freshness.outputs.refresh == 'true'
         with:
           path: pipeline/cache
           key: kell-own-market-${{ runner.os }}-${{ github.run_id }}
@@ -64,6 +71,8 @@ jobs:
           git add web/data snapshots pipeline/benchmark_midsmall400.csv
           if ! git diff --cached --quiet; then
             git commit -m "Update validated Kell EOD snapshot [skip ci]"
+            git fetch origin main
+            git rebase origin/main
             git push
           fi
       - name: Configure native GitHub Pages
